@@ -1,7 +1,7 @@
 import sys, miicam
 import cv2
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QTimer, QSignalBlocker, Qt
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QTimer, QSignalBlocker, Qt, QRect
+from PyQt5.QtGui import QPixmap, QImage, QPainter, QPen, QBrush
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QCheckBox, QMessageBox, QPushButton, QComboBox, QSlider, QGroupBox, QGridLayout, QBoxLayout, QHBoxLayout, QVBoxLayout, QMenu, QAction
 
 class MainWidget(QWidget):
@@ -36,6 +36,9 @@ class MainWidget(QWidget):
         self.temp = miicam.MIICAM_TEMP_DEF
         self.tint = miicam.MIICAM_TINT_DEF
         self.count = 0
+        self.crop_area = None
+        self.x = 50
+        self.y = 50
 
         gboxres = QGroupBox("Resolution")
         self.cmb_res = QComboBox()
@@ -103,17 +106,58 @@ class MainWidget(QWidget):
 
         self.lbl_frame = QLabel()
         self.lbl_video = QLabel()
+
+        qmap = self.lbl_video.pixmap()
+        painter = QPainter(self.lbl_video)
+        painter.setPen(QPen(Qt.green, 10, Qt.SolidLine))
+        painter.drawRect(100, 100, 200, 200)
+
         vlytshow = QVBoxLayout()
         vlytshow.addWidget(self.lbl_video, 1)
         vlytshow.addWidget(self.lbl_frame)
         wgshow = QWidget()
         wgshow.setLayout(vlytshow)
 
+
+        self.lbl_frame_crop = QLabel()
+        self.lbl_video_crop = QLabel()
+        vlytshow_crop = QVBoxLayout()
+        vlytshow_crop.addWidget(self.lbl_video_crop, 1)
+        vlytshow_crop.addWidget(self.lbl_frame_crop)
+        wgshow1 = QWidget()
+        wgshow1.setStyleSheet("background-color: #7FFFD4")
+        wgshow1.setLayout(vlytshow_crop)
+        wgctrl1 = QWidget()
+        wgctrl1.setStyleSheet("background-color: #7FFFA4")
+
+        self.btn_ctrl_crop_W = QPushButton(" ↑ ")
+        self.btn_ctrl_crop_A = QPushButton(" ← ")
+        self.btn_ctrl_crop_S = QPushButton(" ↓ ")
+        self.btn_ctrl_crop_D = QPushButton(" → ")
+        self.btn_ctrl_crop_W.clicked.connect(self.onBtnW)
+        self.btn_ctrl_crop_A.clicked.connect(self.onBtnA)
+        self.btn_ctrl_crop_S.clicked.connect(self.onBtnS)
+        self.btn_ctrl_crop_D.clicked.connect(self.onBtnD)
+
+        vlytctrlcrop = QGridLayout()
+        vlytctrlcrop.addWidget(self.btn_ctrl_crop_W, 0, 1)
+        vlytctrlcrop.addWidget(self.btn_ctrl_crop_A, 1, 0)
+        vlytctrlcrop.addWidget(self.btn_ctrl_crop_S, 1, 1)
+        vlytctrlcrop.addWidget(self.btn_ctrl_crop_D, 1, 2)
+        wgshowctlcrop = QWidget()
+        wgshowctlcrop.setLayout(vlytctrlcrop)
+        wgshowctlcrop.setStyleSheet("background-color: #2FF1A3")
+
         gmain = QGridLayout()
         gmain.setColumnStretch(0, 1)
         gmain.setColumnStretch(1, 4)
-        gmain.addWidget(wgctrl)
-        gmain.addWidget(wgshow)
+        gmain.setRowStretch(0, 3)
+        gmain.setRowStretch(2, 2)
+        gmain.addWidget(wgctrl1, 0, 0)
+        gmain.addWidget(wgshowctlcrop, 1, 0)
+        gmain.addWidget(wgctrl, 2, 0)
+        gmain.addWidget(wgshow1, 0, 1)
+        gmain.addWidget(wgshow, 2, 1)
         self.setLayout(gmain)
 
         self.timer.timeout.connect(self.onTimer)
@@ -124,7 +168,19 @@ class MainWidget(QWidget):
             nFrame, nTime, nTotalFrame = self.hcam.get_FrameRate()
             self.lbl_frame.setText("{}, fps = {:.1f}".format(nTotalFrame, nFrame * 1000.0 / nTime))
     def onBtnMake(self):
-
+        return 0
+    def onBtnW(self):
+        if self.hcam:
+            self.y = self.y - 1
+    def onBtnA(self):
+        if self.hcam:
+            self.x = self.x - 1
+    def onBtnS(self):
+        if self.hcam:
+            self.y = self.y + 1
+    def onBtnD(self):
+        if self.hcam:
+            self.x = self.x + 1
     def closeCamera(self):
         if self.hcam:
             self.hcam.Close()
@@ -261,7 +317,11 @@ class MainWidget(QWidget):
                 if action:
                     self.cur = arr[action.data()]
                     self.openCamera()
-
+    def onBtnCrop(self):
+        if self.hcam:
+            if 0 == self.cur.model.still:
+                if self.pData is not None:
+                    image = QImage(self.pData, self.imgWidth, self.imgHeight, QImage.Format_RGB888)
     def onBtnSnap(self):
         if self.hcam:
             if 0 == self.cur.model.still:    # not support still image capture
@@ -309,7 +369,20 @@ class MainWidget(QWidget):
         else:
             image = QImage(self.pData, self.imgWidth, self.imgHeight, QImage.Format_RGB888)
             newimage = image.scaled(self.lbl_video.width(), self.lbl_video.height(), Qt.KeepAspectRatio, Qt.FastTransformation)
-            self.lbl_video.setPixmap(QPixmap.fromImage(newimage))
+            self.qmap = QPixmap.fromImage(newimage)
+            self.lbl_video.setPixmap(self.qmap)
+
+            self.crop_area = QRect(self.x, self.y, 250, 150)
+
+            self.pixmap = self.lbl_video.pixmap()
+            painter = QPainter(self.pixmap)
+            painter.setPen(QPen(Qt.green, 2, Qt.DashLine))
+            painter.drawRect(self.crop_area)
+            self.lbl_video.setPixmap(self.pixmap)
+
+            image2 = image.copy(self.crop_area)
+            newimage2 = image2.scaled(self.lbl_video_crop.width(), self.lbl_video_crop.height(), Qt.KeepAspectRatio, Qt.FastTransformation)
+            self.lbl_video_crop.setPixmap(QPixmap.fromImage(newimage2))
 
     def handleExpoEvent(self):
         time = self.hcam.get_ExpoTime()
