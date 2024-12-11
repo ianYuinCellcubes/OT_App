@@ -1,8 +1,7 @@
-import cv2
-import ScreenReader
+from source.OT import ScreenReader
 import os, sys
-from PySide6.QtGui import QIcon, QFont, QImage, QPixmap, QIntValidator
-from PySide6.QtCore import QCoreApplication, Qt, QTimer
+from PySide6.QtGui import QIcon, QFont, QPixmap, QIntValidator
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QWidget,
     QFileDialog,
@@ -138,6 +137,7 @@ class MyApp(QMainWindow):
         self.resolutionX = QLineEdit(self)
         # self.resolutionX.setText(str(self.w.rslX))
         self.resolutionX.setFixedWidth(80)
+        self.resolutionX.setText("3840")
         self.resolutionX.setAlignment(Qt.AlignCenter)
         self.resolutionX.returnPressed.connect(self.rsl_X_returnPressed)
         self.resolutionX.setValidator(QIntValidator(0, 10000, self))
@@ -146,6 +146,7 @@ class MyApp(QMainWindow):
         subSign.setAlignment(Qt.AlignCenter)
 
         self.resolutionY = QLineEdit(self)
+        self.resolutionY.setText("3840")
         # self.resolutionY.setText(str(self.w.rslY))
         self.resolutionY.setFixedWidth(80)
         self.resolutionY.setAlignment(Qt.AlignCenter)
@@ -193,7 +194,8 @@ class MyApp(QMainWindow):
         lbl_status0 = QLabel("Status : ", self)
         self.lbl_status = QLabel(" . . . ", self)
         self.le_timer = QSpinBox()
-        self.le_timer.setFixedWidth(80)
+        self.le_timer.setFixedWidth(120)
+        self.le_timer.setValue(1000)
         self.le_timer.setRange(-0, 10000)
         self.le_timer.setAlignment(Qt.AlignCenter)
 
