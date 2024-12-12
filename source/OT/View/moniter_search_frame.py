@@ -1,26 +1,53 @@
-from PySide6.QtWidgets import QWidget, QComboBox, QPushButton, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QComboBox, QPushButton, QHBoxLayout, QLabel, QLineEdit
 from PySide6.QtCore import Qt
-
+from PySide6.QtGui import QIntValidator
 class moniterSearch(QWidget):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
         self.initUI()
     def initUI(self):
+        lbl_Select_Display = QLabel("Select Display")
         self.cb = QComboBox(self)
         self.cb.activated[int].connect(self.on_cb_Activated)
         self.cb.setFixedWidth(200)
 
         btn_monitor_search = QPushButton("🔍")
-        btn_monitor_search.setFixedWidth(20)
+        btn_monitor_search.setFixedWidth(40)
         # btn_monitor_search.setAlignment(Qt.AlignCenter)
         btn_monitor_search.clicked.connect(self.search_monitor)
 
         hbox = QHBoxLayout()
+        hbox.addWidget(lbl_Select_Display)
         hbox.addWidget(self.cb)
         hbox.addWidget(btn_monitor_search)
 
         self.setLayout(hbox)
+    def reolution_tool_bar(self):
+        resol_X = QLineEdit()
+        resol_X.setAlignment(Qt.AlignCenter)
+        resol_X.setValidator(QIntValidator(0, 10000, self))
+        # resol_X.returnPressed.connect(self.resol)
+        subSign = QLabel(' X ')
+        subSign.setFixedWidth(20)
+        subSign.setAlignment(Qt.AlignCenter)
+
+        resol_Y = QLineEdit()
+        resol_Y.setAlignment(Qt.AlignCenter)
+        resol_Y.setValidator(QIntValidator(0, 10000, self))
+
+        btn_reUpdate = QPushButton("↻", self)
+        btn_reUpdate.clicked.connect(self.btn_reUpdate)
+
+        resolbox = QHBoxLayout()
+        resolbox.addWidget(resol_X)
+        resolbox.addWidget(subSign)
+        resolbox.addWidget(resol_Y)
+        resolbox.addWidget(btn_reUpdate)
+        resolWidget = QWidget()
+        resolWidget.setLayout(resolbox)
+
+        return resolWidget
         #
         # self.resolutionX = QLineEdit(self)
         # # self.resolutionX.setText(str(self.w.rslX))
@@ -59,10 +86,11 @@ class moniterSearch(QWidget):
         # mF = QWidget()
         # mF.setLayout(vbox1)
     def on_cb_Activated(self, i):
-        index = i
-        self.controller.set_monitor_index()
+        self.controller.set_monitor_index(i)
     def cb_update(self, data):
+        self.cb.clear()
+        print(data)
         for i in range(len(data)):
-            self.cb.addItem(data(i), userData=i)
+            self.cb.addItem(data[i][1], userData=i)
     def search_monitor(self):
         self.controller.search_monitor()
